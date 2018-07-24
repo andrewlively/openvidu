@@ -15,10 +15,12 @@
  *
  */
 
+import { OpenViduRole } from './OpenViduRole';
 import { Session } from './Session';
 import { SessionProperties } from './SessionProperties';
 import { Recording } from './Recording';
 import { RecordingProperties } from './RecordingProperties';
+import { TokenOptions } from './TokenOptions';
 
 import axios from 'axios';
 
@@ -105,6 +107,55 @@ export class OpenVidu {
         .catch(error => {
           reject(error);
         });
+    });
+  }
+
+  /**
+     * Gets a new token associated to provided sessionId
+     *
+     * @returns A Promise that is resolved to the _token_ if success and rejected with an Error object if not
+     */
+  public generateTokenForSession(sessionId: string, tokenOptions?: TokenOptions): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+
+        const data = JSON.stringify({
+            session: sessionId,
+            role: (!!tokenOptions && !!tokenOptions.role) ? tokenOptions.role : OpenViduRole.PUBLISHER,
+            data: (!!tokenOptions && !!tokenOptions.data) ? tokenOptions.data : ''
+        });
+
+        axios.post(
+            'https://' + OpenVidu.hostname + ':' + OpenVidu.port + OpenVidu.API_TOKENS,
+            data,
+            {
+                headers: {
+                    'Authorization': OpenVidu.basicAuth,
+                    'Content-Type': 'application/json'
+                }
+            }
+        )
+            .then(res => {
+                if (res.status === 200) {
+                    // SUCCESS response from openvidu-server. Resolve token
+                    resolve(res.data.id);
+                } else {
+                    // ERROR response from openvidu-server. Resolve HTTP status
+                    reject(new Error(res.status.toString()));
+                }
+            }).catch(error => {
+                if (error.response) {
+                    // The request was made and the server responded with a status code (not 2xx)
+                    reject(new Error(error.response.status.toString()));
+                } else if (error.request) {
+                    // The request was made but no response was received
+                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                    // http.ClientRequest in node.js
+                    console.error(error.request);
+                } else {
+                    // Something happened in setting up the request that triggered an Error
+                    console.error('Error', error.message);
+                }
+            });
     });
   }
 

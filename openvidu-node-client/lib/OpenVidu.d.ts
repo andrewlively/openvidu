@@ -2,6 +2,7 @@ import { Session } from './Session';
 import { SessionProperties } from './SessionProperties';
 import { Recording } from './Recording';
 import { RecordingProperties } from './RecordingProperties';
+import { TokenOptions } from './TokenOptions';
 export declare class OpenVidu {
     private urlOpenViduServer;
     private Buffer;
@@ -64,6 +65,18 @@ export declare class OpenVidu {
      * @returns A Promise that is resolved to the [[Session]] if success and rejected with an Error object if not.
      */
     createSession(properties?: SessionProperties): Promise<Session>;
+    /**
+     * Gets an OpenVidu session by id. You can call [[Session.getSessionId]] inside the resolved promise to retrieve the `sessionId`
+     *
+     * @returns A Promise that is resolved to the [[Session]] if success and rejected with an Error object if not.
+     */
+    getSession(sessionId: string): Promise<Session>;
+    /**
+       * Gets a new token associated to provided sessionId
+       *
+       * @returns A Promise that is resolved to the _token_ if success and rejected with an Error object if not
+       */
+    generateTokenForSession(sessionId: string, tokenOptions?: TokenOptions): Promise<string>;
     startRecording(sessionId: string): Promise<Recording>;
     startRecording(sessionId: string, name: string): Promise<Recording>;
     startRecording(sessionId: string, properties: RecordingProperties): Promise<Recording>;

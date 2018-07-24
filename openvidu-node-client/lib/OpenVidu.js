@@ -16,6 +16,7 @@
  *
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+var OpenViduRole_1 = require("./OpenViduRole");
 var Session_1 = require("./Session");
 var Recording_1 = require("./Recording");
 var axios_1 = require("axios");
@@ -62,6 +63,91 @@ var OpenVidu = /** @class */ (function () {
             })
                 .catch(function (error) {
                 reject(error);
+            });
+        });
+    };
+    /**
+     * Gets an OpenVidu session by id. You can call [[Session.getSessionId]] inside the resolved promise to retrieve the `sessionId`
+     *
+     * @returns A Promise that is resolved to the [[Session]] if success and rejected with an Error object if not.
+     */
+    OpenVidu.prototype.getSession = function (sessionId) {
+        return new Promise(function (resolve, reject) {
+            axios_1.default.get('https://' + OpenVidu.hostname + ':' + OpenVidu.port + OpenVidu.API_SESSIONS + '/' + sessionId, {
+                headers: {
+                    'Authorization': OpenVidu.basicAuth,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(function (res) {
+                if (res.status === 200) {
+                    // SUCCESS response from openvidu-server. Resolve token
+                    resolve(new Session_1.Session(res.data));
+                }
+                else {
+                    // ERROR response from openvidu-server. Resolve HTTP status
+                    reject(new Error(res.status.toString()));
+                }
+            }).catch(function (error) {
+                if (error.response) {
+                    // The request was made and the server responded with a status code (not 2xx)
+                    reject(new Error(error.response.status.toString()));
+                }
+                else if (error.request) {
+                    // The request was made but no response was received
+                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                    // http.ClientRequest in node.js
+                    console.error(error.request);
+                }
+                else {
+                    // Something happened in setting up the request that triggered an Error
+                    console.error('Error', error.message);
+                }
+            });
+        });
+    };
+    /**
+       * Gets a new token associated to provided sessionId
+       *
+       * @returns A Promise that is resolved to the _token_ if success and rejected with an Error object if not
+       */
+    OpenVidu.prototype.generateTokenForSession = function (sessionId, tokenOptions) {
+        return new Promise(function (resolve, reject) {
+            var data = JSON.stringify({
+                session: sessionId,
+                role: (!!tokenOptions && !!tokenOptions.role) ? tokenOptions.role : OpenViduRole_1.OpenViduRole.PUBLISHER,
+                data: (!!tokenOptions && !!tokenOptions.data) ? tokenOptions.data : ''
+            });
+            axios_1.default.post('https://' + OpenVidu.hostname + ':' + OpenVidu.port + OpenVidu.API_TOKENS, data, {
+                headers: {
+                    'Authorization': OpenVidu.basicAuth,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(function (res) {
+                if (res.status === 200) {
+                    // SUCCESS response from openvidu-server. Resolve token
+                    resolve(res.data.id);
+                }
+                else {
+                    // ERROR response from openvidu-server. Resolve HTTP status
+                    reject(new Error(res.status.toString()));
+                }
+            }).catch(function (error) {
+                if (error.response) {
+                    // The request was made and the server responded with a status code (not 2xx)
+                    reject(new Error(error.response.status.toString()));
+                }
+                else if (error.request) {
+                    // The request was made but no response was received
+                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                    // http.ClientRequest in node.js
+                    console.error(error.request);
+                }
+                else {
+                    // Something happened in setting up the request that triggered an Error
+                    console.error('Error', error.message);
+                }
             });
         });
     };

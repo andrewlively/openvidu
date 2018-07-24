@@ -111,6 +111,47 @@ export class OpenVidu {
   }
 
   /**
+   * Gets an OpenVidu session by id. You can call [[Session.getSessionId]] inside the resolved promise to retrieve the `sessionId`
+   *
+   * @returns A Promise that is resolved to the [[Session]] if success and rejected with an Error object if not.
+   */
+  public getSession(sessionId: string): Promise<Session> {
+    return new Promise<Session>((resolve, reject) => {
+      axios.get(
+        'https://' + OpenVidu.hostname + ':' + OpenVidu.port + OpenVidu.API_SESSIONS + '/' + sessionId,
+        {
+            headers: {
+                'Authorization': OpenVidu.basicAuth,
+                'Content-Type': 'application/json'
+            }
+        }
+    )
+        .then(res => {
+            if (res.status === 200) {
+                // SUCCESS response from openvidu-server. Resolve token
+                resolve(new Session(res.data));
+            } else {
+                // ERROR response from openvidu-server. Resolve HTTP status
+                reject(new Error(res.status.toString()));
+            }
+        }).catch(error => {
+            if (error.response) {
+                // The request was made and the server responded with a status code (not 2xx)
+                reject(new Error(error.response.status.toString()));
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.error(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.error('Error', error.message);
+            }
+        });
+    });
+  }
+
+  /**
      * Gets a new token associated to provided sessionId
      *
      * @returns A Promise that is resolved to the _token_ if success and rejected with an Error object if not
